@@ -84,32 +84,40 @@ bool HelloWorld::init()
     listener = EventListenerTouchOneByOne::create();
     listener->setSwallowTouches(true);
     listener->onTouchBegan = CC_CALLBACK_2(HelloWorld::onTouchBegan,this);
+    listener->setEnabled(false);
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
     
     label = Label::createWithTTF("Score : 0", "fonts/arial.ttf", 24);
     label->setPosition(Vec2(visibleSize.width/2+origin.x,visibleSize.height*7/8));
     this->addChild(label);
     
+    std::vector<int> n = {0,1,2,3};
+    
     auto menu = Menu::create();
     auto start = MenuItemFont::create("Start",[=](Ref *pSender){
         menu->removeFromParent();
+        listener->setEnabled(true);
         score=0;
-        this->schedule([=](float delta){
+        this->schedule([=](float delta) mutable {
             listener->setEnabled(true);
             if(!flag){
                 this->unschedule("game");
-                auto scene = GameOver::createScene();
+                auto scene = GameOver::createScene(score);
                 Director::getInstance()->replaceScene(scene);
                 
             }
             flag = false;
-            std::vector<int> n = {0,1,2,3};
-            std::random_shuffle(n.begin(), n.end());
+            int last = n.at(3);
+            n.pop_back();
+            n.insert(n.begin(), last);
+            std::random_shuffle(n.begin()+1, n.end());
+            std::random_shuffle(n.begin(), n.end()-1);
             layerRed->setPosition(positions[n.at(0)]);
             layerGreen->setPosition(positions[n.at(1)]);
             layerBlue->setPosition(positions[n.at(2)]);
             layerGrey->setPosition(positions[n.at(3)]);
         }, 1, "game");
+        
     });
     
     menu->addChild(start);
@@ -131,12 +139,8 @@ bool HelloWorld::onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *event){
         std::cout<<score;
     }else{
         flag=false;
-        auto scene = GameOver::createScene();
+        auto scene = GameOver::createScene(score);
         Director::getInstance()->replaceScene(scene);
     }
     return false;
-}
-
-void sceneChange(){
-    
 }
